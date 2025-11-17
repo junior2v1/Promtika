@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PROMTIKA - Генератор промптов</title>
+    <style>
+        :root {
+            --color-primary: #00D9FF;
+            --color-secondary: #FF1493;
+            --color-dark-bg: #0a0e27;
+            --color-dark-surface: #1a1f3a;
+            --color-text: #e0e0e0;
+            --color-text-secondary: #a0a0a0;
+            --color-border: rgba(0, 217, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a0a2e 100%);
+            color: var(--color-text);
+            overflow: hidden;
+            position: fixed;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--color-dark-bg);
+            box-shadow: 0 20px 60px rgba(0, 217, 255, 0.1);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(255, 20, 147, 0.1) 100%);
+            border-bottom: 2px solid var(--color-border);
+            padding: 16px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .subscribe-btn {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .subscribe-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 217, 255, 0.3);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--color-border);
+            flex-shrink: 0;
+            background: var(--color-dark-surface);
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--color-primary);
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        /* Content */
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: none;
+        }
+
+        .content-wrapper.active {
+            display: block;
+        }
+
+        .content {
+            padding: 16px;
+            min-height: 100%;
+            overflow-y: auto;
+        }
+
+        /* Home Page */
+        .home-page {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .category-card {
+            background: linear-gradient(135deg, var(--color-dark-surface) 0%, rgba(26, 31, 58, 0.8) 100%);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+        }
+
+        .category-card:hover {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(255, 20, 147, 0.1));
+            border-color: var(--color-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 217, 255, 0.2);
+        }
+
+        .category-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 14px;
+        }
+
+        /* Generator */
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--color-primary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--color-dark-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            color: var(--color-text);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        textarea {
+            resize: none;
+            min-height: 80px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .template-btn {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid var(--color-border);
+            color: var(--color-primary);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .template-btn:hover {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: var(--color-primary);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 217, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid var(--color-border);
+            color: var(--color-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.2);
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        /* Community */
+        .prompt-card {
+            background: linear-gradient(135deg, var(--color-dark-surface) 0%, rgba(26, 31, 58, 0.8) 100%);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .prompt-card-image {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: var(--color-dark-bg);
+        }
+
+        .prompt-card-text {
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            color: var(--color-text);
+            word-break: break-word;
+            max-height: 50px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: max-height 0.3s ease;
+            position: relative;
+        }
+
+        .prompt-card-text.expanded {
+            max-height: none;
+        }
+
+        .prompt-card-text::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, var(--color-dark-surface));
+            pointer-events: none;
+        }
+
+        .prompt-card-text.expanded::after {
+            display: none;
+        }
+
+        .prompt-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+
+        .prompt-rating {
+            display: flex;
+            gap: 2px;
+            font-size: 14px;
+            color: var(--color-primary);
+        }
+
+        .prompt-likes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .like-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            color: var(--color-text-secondary);
+            padding: 0;
+        }
+
+        .like-btn:hover {
+            color: var(--color-secondary);
+        }
+
+        .like-btn.liked {
+            color: var(--color-secondary);
+        }
+
+        /* Filter */
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .filter-btn {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        /* Upload */
+        .upload-area {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.05), rgba(255, 20, 147, 0.05));
+            border: 2px dashed var(--color-border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--color-primary);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(255, 20, 147, 0.1));
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        #imagePreview {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: var(--color-dark-bg);
+            display: none;
+        }
+
+        #imagePreview.show {
+            display: block;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-item {
+            background: rgba(0, 217, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .no-prompts {
+            text-align: center;
+            color: var(--color-text-secondary);
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="header-title">PROMTIKA</h1>
+            <p class="header-subtitle">Генератор промптов для Nana Banana</p>
+            <a href="https://t.me/promtikaii" target="_blank" class="subscribe-btn">🔗 Подписаться на канал</a>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabsNav"></div>
+
+        <!-- Home Page -->
+        <div class="content-wrapper active" id="home">
+            <div class="content">
+                <div class="home-page" id="categoriesGrid"></div>
+            </div>
+        </div>
+
+        <!-- Generator -->
+        <div class="content-wrapper" id="generator">
+            <div class="content">
+                <div>
+                    <h2 class="section-title">Конструктор промта</h2>
+                    <div class="form-group">
+                        <label class="form-label">Главный субъект</label>
+                        <input type="text" id="subject" placeholder="Например: портрет девушки">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Стиль</label>
+                        <input type="text" id="style" placeholder="Например: цифровое искусство">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Окружение</label>
+                        <input type="text" id="environment" placeholder="Например: в лесу">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Освещение</label>
+                        <input type="text" id="lighting" placeholder="Например: золотой час">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Настроение</label>
+                        <input type="text" id="mood" placeholder="Например: спокойное">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Детализация (1-10)</label>
+                        <input type="number" id="detail" min="1" max="10" value="8">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Качество</label>
+                        <select id="quality">
+                            <option>HD (высокое качество)</option>
+                            <option>4K (ультра качество)</option>
+                            <option>8K (максимальное качество)</option>
+                        </select>
+                    </div>
+
+                    <h2 class="section-title" style="margin-top: 20px;">Готовые шаблоны</h2>
+                    <div class="templates-grid" id="templatesGrid"></div>
+
+                    <h2 class="section-title" style="margin-top: 20px;">Итоговый промт</h2>
+                    <div class="form-group">
+                        <textarea id="finalPrompt" readonly></textarea>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">Слов: <span id="wordCount">0</span></div>
+                        <div class="stat-item">Символов: <span id="charCount">0</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="copyPrompt()">📋 Скопировать промт</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Community -->
+        <div class="content-wrapper" id="community">
+            <div class="content">
+                <div class="filter-buttons" id="filterButtons"></div>
+                <div id="communityList"></div>
+            </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="content-wrapper" id="upload">
+            <div class="content">
+                <h2 class="section-title">Загрузить промт</h2>
+                <div class="form-group">
+                    <label class="form-label">Название промта</label>
+                    <input type="text" id="uploadName" placeholder="Дайте название">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Промт</label>
+                    <textarea id="uploadPrompt" placeholder="Вставьте промт"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Загрузить изображение</label>
+                    <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">Нажмите или перетащите</div>
+                    </div>
+                    <img id="imagePreview" alt="Preview">
+                    <input type="file" id="imageInput" style="display: none;" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Формат</label>
+                    <select id="imageFormat">
+                        <option>JPEG</option>
+                        <option>PNG</option>
+                        <option>WebP</option>
+                        <option>GIF</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Разрешение</label>
+                    <select id="imageResolution">
+                        <option>512×512</option>
+                        <option>1024×1024</option>
+                        <option>1920×1080</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="uploadPrompt()">🚀 Загрузить промт</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categories = [
+            { name: 'Портреты', icon: '👤', templates: ['портрет красивой девушки', 'портрет мудрого старца'] },
+            { name: 'Пейзажи', icon: '🏞️', templates: ['горные пейзажи', 'морской пляж на закате'] },
+            { name: 'Фантазия', icon: '✨', templates: ['драконы в облаках', 'волшебный замок'] },
+            { name: 'Еда', icon: '🍽️', templates: ['красивое блюдо', 'аппетитный десерт'] },
+            { name: 'Архитектура', icon: '🏗️', templates: ['современное здание', 'древний храм'] },
+            { name: 'Животные', icon: '🐾', templates: ['величественный лев', 'летящий орел'] },
+            { name: 'Сезоны', icon: '🌸', templates: ['весенний сад', 'летний день'] },
+            { name: 'Абстракция', icon: '🎨', templates: ['калейдоскоп цветов', 'фрактальная геометрия'] }
+        ];
+
+        const filters = [
+            { name: '🆕 Новые', value: 'new' },
+            { name: '🔥 В тренде', value: 'trending' },
+            { name: '⭐ Топ рейтинг', value: 'top' },
+            { name: '👍 Популярные', value: 'popular' },
+            { name: '📅 Старые', value: 'old' }
+        ];
+
+        let currentCategory = null;
+        let currentFilter = 'new';
+        let prompts = [];
+        let userLikes = {};
+
+        function init() {
+            loadData();
+            renderCategories();
+            renderTabs();
+            renderFilterButtons();
+            setupEventListeners();
+            updatePrompt();
+        }
+
+        function renderTabs() {
+            const tabsNav = document.getElementById('tabsNav');
+            tabsNav.innerHTML = `
+                <button class="tab active" data-tab="home">🏠 Главная</button>
+                <button class="tab" data-tab="generator">✨ Генератор</button>
+                <button class="tab" data-tab="community">👥 Сообщество</button>
+                <button class="tab" data-tab="upload">📤 Загрузить</button>
+            `;
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('prompts');
+            if (saved) prompts = JSON.parse(saved);
+            const savedLikes = localStorage.getItem('userLikes');
+            if (savedLikes) userLikes = JSON.parse(savedLikes);
+        }
+
+        function saveData() {
+            localStorage.setItem('prompts', JSON.stringify(prompts));
+            localStorage.setItem('userLikes', JSON.stringify(userLikes));
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = categories.map((cat, idx) => `
+                <div class="category-card" onclick="selectCategory(${idx})">
+                    <div class="category-icon">${cat.icon}</div>
+                    <div class="category-name">${cat.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectCategory(idx) {
+            currentCategory = idx;
+            loadTemplates();
+            switchTab('generator');
+        }
+
+        function loadTemplates() {
+            const cat = categories[currentCategory];
+            const grid = document.getElementById('templatesGrid');
+            grid.innerHTML = cat.templates.map(template => `
+                <button class="template-btn" onclick="loadTemplate('${template.replace(/'/g, "\\'")}')">${template}</button>
+            `).join('');
+        }
+
+        function loadTemplate(template) {
+            document.getElementById('subject').value = template;
+            updatePrompt();
+        }
+
+        function updatePrompt() {
+            const subject = document.getElementById('subject').value;
+            const style = document.getElementById('style').value;
+            const environment = document.getElementById('environment').value;
+            const lighting = document.getElementById('lighting').value;
+            const mood = document.getElementById('mood').value;
+            const detail = document.getElementById('detail').value;
+            const quality = document.getElementById('quality').value;
+
+            let prompt = subject;
+            if (style) prompt += `, ${style}`;
+            if (environment) prompt += `, ${environment}`;
+            if (lighting) prompt += `, ${lighting}`;
+            if (mood) prompt += `, ${mood}`;
+            prompt += `, детализация: ${detail}/10, ${quality}`;
+
+            document.getElementById('finalPrompt').value = prompt;
+            document.getElementById('wordCount').textContent = prompt.split(/\s+/).filter(w => w).length;
+            document.getElementById('charCount').textContent = prompt.length;
+        }
+
+        function copyPrompt() {
+            const text = document.getElementById('finalPrompt').value;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification('✅ Промт скопирован!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function setupEventListeners() {
+            ['subject', 'style', 'environment', 'lighting', 'mood', 'detail', 'quality'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updatePrompt);
+                    el.addEventListener('change', updatePrompt);
+                }
+            });
+
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) {
+                imageInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const preview = document.getElementById('imagePreview');
+                            preview.src = event.target.result;
+                            preview.classList.add('show');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        function uploadPrompt() {
+            const name = document.getElementById('uploadName').value;
+            const text = document.getElementById('uploadPrompt').value;
+            const format = document.getElementById('imageFormat').value;
+            const resolution = document.getElementById('imageResolution').value;
+
+            if (!name || !text) {
+                showNotification('⚠️ Заполните название и промт');
+                return;
+            }
+
+            const preview = document.getElementById('imagePreview');
+            const image = preview.classList.contains('show') ? preview.src : null;
+
+            const prompt = {
+                id: Date.now(),
+                name,
+                text,
+                image,
+                format,
+                resolution,
+                likes: 0,
+                date: new Date().toISOString()
+            };
+
+            prompts.push(prompt);
+            saveData();
+            showNotification('✅ Промт загружен!');
+
+            document.getElementById('uploadName').value = '';
+            document.getElementById('uploadPrompt').value = '';
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('imagePreview').classList.remove('show');
+            document.getElementById('imageInput').value = '';
+        }
+
+        function showNotification(msg) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = msg;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2000);
+        }
+
+        function renderFilterButtons() {
+            const container = document.getElementById('filterButtons');
+            container.innerHTML = filters.map(f => `
+                <button class="filter-btn ${currentFilter === f.value ? 'active' : ''}" onclick="setFilter('${f.value}')">${f.name}</button>
+            `).join('');
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            renderFilterButtons();
+            renderCommunity();
+        }
+
+        function getFilteredPrompts() {
+            let sorted = [...prompts];
+
+            switch (currentFilter) {
+                case 'new':
+                    sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    break;
+                case 'trending':
+                    sorted.sort((a, b) => {
+                        const aScore = a.likes + (1000 - (Date.now() - new Date(a.date)) / 86400000);
+                        const bScore = b.likes + (1000 - (Date.now() - new Date(b.date)) / 86400000);
+                        return bScore - aScore;
+                    });
+                    break;
+                case 'top':
+                case 'popular':
+                    sorted.sort((a, b) => b.likes - a.likes);
+                    break;
+                case 'old':
+                    sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    break;
+            }
+
+            return sorted;
+        }
+
+        function getRating(likes) {
+            const maxLikes = Math.max(1, ...prompts.map(p => p.likes));
+            const rating = Math.ceil((likes / maxLikes) * 5) || 1;
+            return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        }
+
+        function renderCommunity() {
+            const list = document.getElementById('communityList');
+            const sorted = getFilteredPrompts();
+
+            if (sorted.length === 0) {
+                list.innerHTML = '<div class="no-prompts">📭 Нет промтов в сообществе</div>';
+                return;
+            }
+
+            list.innerHTML = sorted.map(p => {
+                const isLiked = userLikes[p.id];
+                return `
+                    <div class="prompt-card">
+                        ${p.image ? `<img src="${p.image}" class="prompt-card-image" alt="Result">` : ''}
+                        <div class="prompt-card-text" onclick="toggleExpand(this)">${p.text}</div>
+                        <div class="prompt-card-meta">
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="prompt-rating">${getRating(p.likes)}</div>
+                                <div class="prompt-likes">
+                                    <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${p.id})">👍</button>
+                                    <span>${p.likes}</span>
+                                </div>
+                            </div>
+                            <button class="btn-small btn-secondary" onclick="copyText(${p.id})">📋 Копировать</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLike(id) {
+            if (userLikes[id]) {
+                delete userLikes[id];
+                const idx = prompts.findIndex(p => p.id === id);
+                if (idx >= 0) prompts[idx].likes--;
+            } else {
+                userLikes[id] = true;
+                const idx = prompts.findIndex(p => p.id === id);
+                if (idx >= 0) prompts[idx].likes++;
+            }
+            saveData();
+            renderCommunity();
+        }
+
+        function toggleExpand(element) {
+            element.classList.toggle('expanded');
+        }
+
+        function copyText(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (prompt) {
+                const text = prompt.text;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showNotification('✅ Промт скопирован!');
+                    }).catch(() => {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+        }
+
+        function fallbackCopy(text) {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '-9999px';
+                textArea.style.opacity = '0';
+                textArea.style.width = '2em';
+                textArea.style.height = '2em';
+                textArea.style.padding = '0';
+                textArea.style.border = 'none';
+                textArea.style.outline = 'none';
+                textArea.style.boxShadow = 'none';
+                textArea.style.background = 'transparent';
+                textArea.style.clip = 'rect(0,0,0,0)';
+                textArea.setAttribute('readonly', '');
+                textArea.setAttribute('aria-hidden', 'true');
+                textArea.setAttribute('tabindex', '-1');
+                document.body.appendChild(textArea);
+                
+                textArea.focus();
+                textArea.select();
+                
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    showNotification('✅ Промт скопирован!');
+                } else {
+                    showNotification('⚠️ Не удалось скопировать');
+                }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                showNotification('⚠️ Ошибка при копировании');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.content-wrapper').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+            if (tab === 'community') {
+                renderCommunity();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
